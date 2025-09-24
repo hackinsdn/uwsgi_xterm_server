@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Flask + SocketIO + xterm.js</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <style>
+      body { margin: 0; height: 100vh; display:flex; }
+      #terminal { flex: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/socket.io/client-dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <script>
+      const socket = io();
+      const term = new Terminal();
+      term.open(document.getElementById('terminal'));
+
+      term.onData(function(data) {
+        socket.emit('terminal-input', { input: data });
+      });
+
+      socket.on('terminal-output', function(msg) {
+        term.write(msg.output);
+      });
+
+      // resize handling
+      function sendResize() {
+        const cols = term.cols;
+        const rows = term.rows;
+        socket.emit('resize', { cols: cols, rows: rows });
+      }
+
+      window.addEventListener('resize', () => { term.fit && term.fit(); sendResize(); });
+
+      // If xterm fit addon is needed, you'd load it; as fallback we send initial size
+      setTimeout(sendResize, 200);
+    </script>
+  </body>
+</html>
